@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
-using System.Collections.Generic;
 
 public class CarSpawner : MonoBehaviour
 {
-    public GameObject carPrefab; // Drag your car prefab here
+    public GameObject car1Prefab; // Drag Car1 prefab
+    public GameObject car2Prefab; // Drag Car2 prefab
+    private int selectedCarIndex = 0;
+
     private ARTrackedImageManager trackedImageManager;
     private Dictionary<string, GameObject> spawnedCars = new Dictionary<string, GameObject>();
 
@@ -54,7 +56,9 @@ public class CarSpawner : MonoBehaviour
 
         if (!spawnedCars.ContainsKey(imageName))
         {
-            GameObject car = Instantiate(carPrefab, trackedImage.transform.position, trackedImage.transform.rotation);
+            GameObject selectedPrefab = selectedCarIndex == 0 ? car1Prefab : car2Prefab;
+
+            GameObject car = Instantiate(selectedPrefab, trackedImage.transform.position, trackedImage.transform.rotation);
             car.transform.parent = trackedImage.transform;
             spawnedCars[imageName] = car;
         }
@@ -65,5 +69,11 @@ public class CarSpawner : MonoBehaviour
             car.transform.rotation = trackedImage.transform.rotation;
             car.SetActive(true);
         }
+    }
+
+    // Call this from UI buttons to change model
+    public void SetCarModel(int index)
+    {
+        selectedCarIndex = index;
     }
 }
