@@ -1,32 +1,72 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
-using System.Collections.Generic;
 
 public class TapToPlace : MonoBehaviour
 {
-    public GameObject carPrefab;
-    private ARRaycastManager raycastManager;
-    private List<ARRaycastHit> hits = new();
+    public GameObject carPrefab; // Assign in inspector
+    private GameObject spawnedCar;
 
-    void Start()
+    private ARRaycastManager arRaycastManager;
+    private List<ARRaycastHit> hits = new List<ARRaycastHit>();
+
+    void Awake()
     {
-        raycastManager = FindObjectOfType<ARRaycastManager>();
+        arRaycastManager = GetComponent<ARRaycastManager>();
+        if (arRaycastManager == null)
+        {
+            Debug.LogError("ARRaycastManager not found on " + gameObject.name);
+        }
     }
 
     void Update()
     {
-        if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)
-        {
-            Vector2 touchPos = Input.GetTouch(0).position;
+        if (Input.touchCount == 0)
+            return;
 
-            if (raycastManager.Raycast(touchPos, hits, TrackableType.PlaneWithinPolygon))
+        Touch touch = Input.GetTouch(0);
+        if (touch.phase != TouchPhase.Began)
+            return;
+
+        if (arRaycastManager.Raycast(touch.position, hits, TrackableType.PlaneWithinPolygon))
+        {
+            Pose hitPose = hits[0].pose;
+
+            if (spawnedCar == null)
             {
-                Pose pose = hits[0].pose;
-                Instantiate(carPrefab, pose.position, pose.rotation);
+                spawnedCar = Instantiate(carPrefab, hitPose.position, hitPose.rotation);
+            }
+            else
+            {
+                spawnedCar.transform.position = hitPose.position;
+                spawnedCar.transform.rotation = hitPose.rotation;
             }
         }
+    }
+
+    // Return the spawned car GameObject for other scripts to use
+    public GameObject GetSpawnedCar()
+    {
+        return spawnedCar;
+    }
+
+    // Call this to toggle the engine sound on the spawned car
+    public void ToggleCarEngine()
+    {
+        if (spawnedCar == null)
+        {
+            Debug.LogWarning("No spawned car to toggle engine.");
+            return;
+        }
+
+        EngineController engineController = spawnedCar.GetComponent<EngineController>();
+        if (engineController == null)
+        {
+            Debug.LogWarning("No EngineController component found on spawned car.");
+            return;
+        }
+
+        engineController.ToggleEngine();
     }
 }
